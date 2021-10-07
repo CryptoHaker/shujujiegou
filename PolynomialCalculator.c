@@ -15,7 +15,13 @@ typedef Polynomial* PolyPoint;
 
 int LENGTH = 0;  //运算后多项式的项的个数
 
+//处理数据
+//输入合法性检测、输入的数据转化成链表存储方式、数据中特殊例处理
+void HandleInput(PolyPoint P, char* intputStr);  //处理输入的字符串，将相关系数存入线性表中
 int StringToInt(char* str, int len);  //将输入的字符串转换为整数
+void CombineSame(PolyPoint P);  //将具有相同指数的项进行合并
+PolyPoint Delete(PolyPoint P);  //将系数为0的向删除
+//
 
 //快速排序链表
 //按指数进行升序排列，1为升序，0为降序
@@ -23,6 +29,8 @@ void QuickSort(PolyPoint head, PolyPoint tail, int cmp);
 PolyPoint partition(PolyPoint head, PolyPoint tail, int cmp);
 void swap(PolyPoint p, PolyPoint q);
 //
+
+
 
 /*****main begin*****/
 int main()
@@ -33,20 +41,47 @@ int main()
 
     char* inputStr = (char*)malloc(sizeof(char) * MAXSIZE);
     gets(inputStr);
+    HandleInput(P, inputStr);
+    PolyPoint head = &Poly;
+    QuickSort(head, NULL, 0);
+    CombineSame(head);
+    head = Delete(head);
+    while(head)
+    {
+        printf("%d %d\n", head->c, head->e);
+        head = head->next;
+    }
+    system("pause");
+}
+/*****main end*****/
 
-    //对输入的多项式字符串进行处理，将相关系数存入线性表中
-    /*****handle begin*****/
+
+
+
+void HandleInput(PolyPoint P, char* inputStr)
+{
     int begin, end;
     for(begin = 0, end = 0; ; )
     {
         //对x前的系数进行处理
-        while(inputStr[end] != 'x' && inputStr[end] != 'X' && inputStr[end] != '\0') 
+        while(inputStr[end] != 'x' && inputStr[end] != 'X' && inputStr[end] != '\0' &&
+        inputStr[end] != '+' && inputStr[end] != '-') 
             end++;
         P->c = StringToInt(inputStr + begin, end - begin);
 
+        //常数项处理
+        if(inputStr[end] == '+' || inputStr[end] == '-')
+        {
+            P->e = 0;
+            P->next = (PolyPoint)malloc(sizeof(Polynomial)); 
+            P = P->next;
+            begin = end, end++;
+            continue;
+        }
+
         //对x后的指数进行处理
         begin = end;
-        //常数项处理
+        //尾部处理
         if(inputStr[end] == '\0')
         {
             P -> e = 0;
@@ -61,24 +96,12 @@ int main()
         begin = end;
         if(inputStr[end] == '\0')
             break;
+        end++;
         P->next = (PolyPoint)malloc(sizeof(Polynomial)); 
         P = P->next;
     }
     P->next = NULL;
-    /*****handle end*****/
-
-    PolyPoint head = &Poly;
-    QuickSort(head, NULL, 0);
-
-    while(head)
-    {
-        printf("%d %d\n", head->c, head->e);
-        head = head->next;
-    }
-    system("pause");
 }
-/*****main end*****/
-
 
 int StringToInt(char* str, int len)
 {
@@ -114,6 +137,64 @@ int StringToInt(char* str, int len)
     }
 }
 
+void CombineSame(PolyPoint P)
+{
+    PolyPoint Q, S;
+    Q = P;
+    while(Q && Q->next)
+    {
+        S = Q->next;
+        if(Q->e == S->e)
+        {
+            Q->c += S->c;
+            Q->next = S->next;
+            free(S);
+        }
+        else
+            Q = Q->next;
+    }
+}
+
+PolyPoint Delete(PolyPoint P)
+{
+    PolyPoint S, Q;
+    Q = P;
+    //处理头部节点
+    while(Q && Q->c == 0)
+    {
+        P = P->next;
+        Q = P;
+    }
+
+    S = Q;
+    if(Q)
+        Q = Q->next;
+    while(Q)
+    {
+        if(Q->c == 0)
+        {
+            S->next = Q->next;
+            free(Q);
+            Q = S->next;
+        }
+        else
+        {
+            S = S->next;
+            Q = S->next;
+        }
+    }
+    
+    //链表值为0时返回的情况
+    if(P == NULL)
+    {
+        P = (PolyPoint)malloc(sizeof(Polynomial));
+        P->c = 0;
+        P->e = 0;
+        P->next = NULL;
+    }
+    return P;
+}
+
 void QuickSort(PolyPoint head, PolyPoint tail, int cmp)
 {
     if(head != tail && head->next != tail)
@@ -129,6 +210,7 @@ PolyPoint partition(PolyPoint head, PolyPoint tail, int cmp)
     PolyPoint p = head;
     PolyPoint q = p->next;
     int pivot = p->e;
+
     while(q != tail)
     {
         if(cmp ? q->e < pivot : q->e > pivot)
@@ -138,7 +220,9 @@ PolyPoint partition(PolyPoint head, PolyPoint tail, int cmp)
         }
         q = q->next;
     }
+
     swap(p, head);
+    
     return p;
 }
 
