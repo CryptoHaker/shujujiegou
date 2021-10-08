@@ -8,8 +8,8 @@
 #define false 0
 
 typedef struct Polynomial{
-    int c;  //多项式系数
-    int e;  //多项式指数
+    float c;  //多项式系数
+    float e;  //多项式指数
     struct Polynomial* next;
 }Polynomial;
 
@@ -27,9 +27,10 @@ void GUI_main();
 
 //处理数据
 //输入合法性检测、输入的数据转化成链表存储方式、数据中特殊例处理
+void DataSwitch(PolyPoint head, char* str);
 bool IsWrong(char* str);  //对输入的多项式进行检测，是否合法
 void HandleInput(PolyPoint P, char* intputStr);  //处理输入的字符串，将相关系数存入线性表中
-int StringToInt(char* str, int len);  //将输入的字符串转换为整数
+float StringToInt(char* str, int len);  //将输入的字符串转换为整数
 void CombineSame(PolyPoint P);  //将具有相同指数的项进行合并
 PolyPoint Delete(PolyPoint P);  //将系数为0的向删除
 //
@@ -51,30 +52,33 @@ void swap(PolyPoint p, PolyPoint q);
 /*****main begin*****/
 int main()
 {
-    Polynomial Poly;
-    PolyPoint P;
-    P = &Poly;
+    Polynomial Poly, Poly2;
+    PolyPoint P, Q;
+    P = &Poly, Q = &Poly2;
 
-    char* inputStr = (char*)malloc(sizeof(char) * MAXSIZE);
+    char* str1 = (char*)malloc(sizeof(char) * MAXSIZE);
+    char* str2 = (char*)malloc(sizeof(char) * MAXSIZE);
     GUI_start();
-    scanf("%s", inputStr);
-    if(IsWrong(inputStr)) 
+    scanf("%s", str1);
+    scanf("%s", str2);
+    if(IsWrong(str1) || IsWrong(str2)) 
     {
         printf("The input is illegal!\n");
         system("pause");
         return 0;
     } 
     GUI_main();
-    HandleInput(P, inputStr);
-    PolyPoint head = &Poly;
-    QuickSort(head, NULL, 0);
-    CombineSame(head);
-    head = Delete(head);
-    while(head)
+    DataSwitch(P, str1);
+    DataSwitch(Q, str2);
+    PolyPoint result;
+    result = AddPoly(P, Q);
+    result = Delete(result);
+    while(result)
     {
-        printf("%d %d\n", head->c, head->e);
-        head = head->next;
+        printf("%f %f\n", result->c, result->e);
+        result = result->next;
     }
+
     system("pause");
 }
 /*****main end*****/
@@ -100,14 +104,24 @@ bool IsWrong(char* str)
     for(i = 0; str[i] != '\0'; i++)
     {
         if(!(str[i] == 'x' || str[i] == 'X' || str[i] == '^' || str[i] == '+'
-            || str[i] == '-' || (str[i] >= '0' && str[i] <= '9')))
+            || str[i] == '-' || (str[i] >= '0' && str[i] <= '9') || str[i] == '.'))
             return true;
-        if(str[i+1] != '\0' && (str[i] == 'x' || str[i] == 'X') && (str[i+1] >= '0' && str[i+1] <= '9'))
+        if(str[i+1] != '\0' && (str[i] == 'x' || str[i] == 'X') && ((str[i+1] >= '0' && str[i+1] <= '9') || str[i+1] == '.'))
+            return true;
+        if(str[i] == '.' && (str[i+1] == '\0' || str[i+1] == 'x' || str[i+1] == 'X'))
             return true;
     }
-    if(str[i-1] == '-' || str[i-1] == '+' || str[i-1] == '^')
+    if(str[i-1] == '-' || str[i-1] == '+' || str[i-1] == '^' || str[i-1] == '.')
         return true;
     return false;
+}
+
+void DataSwitch(PolyPoint head, char* str)
+{
+    HandleInput(head, str);
+    QuickSort(head, NULL, 0);
+    CombineSame(head);
+    head = Delete(head);
 }
 
 void HandleInput(PolyPoint P, char* inputStr)
@@ -119,6 +133,7 @@ void HandleInput(PolyPoint P, char* inputStr)
         while(inputStr[end] != 'x' && inputStr[end] != 'X' && inputStr[end] != '\0' &&
         inputStr[end] != '+' && inputStr[end] != '-') 
             end++;
+        if(end == 0 &&(inputStr[end+1] == 'x' || inputStr[end+1] == 'X')) end++;
         P->c = StringToInt(inputStr + begin, end - begin);
 
         //常数项处理
@@ -155,9 +170,10 @@ void HandleInput(PolyPoint P, char* inputStr)
     P->next = NULL;
 }
 
-int StringToInt(char* str, int len)
+float StringToInt(char* str, int len)
 {
-    int i, num = 0;
+    int i;
+    float num = 1, a = 10, b = 1;
     int isSymbol = 0;  //判断是否为负数
 
     switch(len)
@@ -181,8 +197,15 @@ int StringToInt(char* str, int len)
         if(str[0] == '-' || str[0] == '+') isSymbol = 1;
         for(i = isSymbol ? 1 : 0; i < len; i++)
         {
-            num *= 10;
-            num += str[i] - '0';
+            if(b < 1) b = b * 0.1;
+            if(str[i] == '.')
+            {
+                a = 1;
+                b = 0.1;
+                i++;
+            }
+            num *= a;
+            num += (str[i] - '0') * b;
         }
         return str[0] == '-' ? 0 - num : num;
         break;
@@ -254,46 +277,49 @@ PolyPoint AddPoly(PolyPoint A, PolyPoint B)
     C->next = NULL;
     PolyPoint P, Q;
     P = A, Q = B;
-    while(A && B)
+    while(P && Q)
     {
         if(P->e == Q->e)
         {
             C->c = P->c + Q->c;
-            C->e = P->e + Q->e;
-            C->next = (PolyPoint)malloc(sizeof(Polynomial));
-            C = C->next;
+            C->e = P->e;
             P = P->next, Q = Q->next;
         }
         else if(P->e > Q->e)
         {
             C->c = P->c;
             C->e = P->e;
-            C->next = (PolyPoint)malloc(sizeof(Polynomial));
-            C = C->next;
             P = P->next;
         }
         else
         {
             C->c = Q->c;
             C->e = Q->e;
-            C->next = (PolyPoint)malloc(sizeof(Polynomial));
-            C = C->next;
             Q = Q->next;
         }
+        if(!P && !Q) 
+        {
+            C->next = NULL;
+            return Head;
+        }
+        C->next = (PolyPoint)malloc(sizeof(Polynomial));
+        C = C->next;
     }
     PolyPoint S;
     if(!P && Q) S = Q;
-    if(P && !Q) S = P;
-    else S = NULL;
+    else  S = P;
     while(S)
     {
         C->c = S->c;
         C->e = S->e;
-        C->next = (PolyPoint)malloc(sizeof(Polynomial));
-        C = C->next;
+        if(!S->next) C->next = NULL;
+        else
+        {   
+            C->next = (PolyPoint)malloc(sizeof(Polynomial));
+            C = C->next;
+        }
         S = S->next;
     }
-    free(C);
     return Head;
 }
 
