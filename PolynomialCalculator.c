@@ -4,6 +4,8 @@
 #define MAXSIZE 1000
 #define OK 1
 #define ERROR 0
+#define true 1
+#define false 0
 
 typedef struct Polynomial{
     int c;  //多项式系数
@@ -12,16 +14,30 @@ typedef struct Polynomial{
 }Polynomial;
 
 typedef Polynomial* PolyPoint;
+typedef int bool;
 
 int LENGTH = 0;  //运算后多项式的项的个数
 
+//操作界面
+//程序设计的功能有输入、多项式相加、多项式相减、多项式相乘
+void GUI_start();
+void GUI_main();
+//
+
+
 //处理数据
 //输入合法性检测、输入的数据转化成链表存储方式、数据中特殊例处理
+bool IsWrong(char* str);  //对输入的多项式进行检测，是否合法
 void HandleInput(PolyPoint P, char* intputStr);  //处理输入的字符串，将相关系数存入线性表中
 int StringToInt(char* str, int len);  //将输入的字符串转换为整数
 void CombineSame(PolyPoint P);  //将具有相同指数的项进行合并
 PolyPoint Delete(PolyPoint P);  //将系数为0的向删除
 //
+
+//功能区
+//多项式加法、减法、乘法
+PolyPoint AddPoly(PolyPoint A, PolyPoint B);  //计算两个多项式加法并返回结果
+
 
 //快速排序链表
 //按指数进行升序排列，1为升序，0为降序
@@ -40,7 +56,15 @@ int main()
     P = &Poly;
 
     char* inputStr = (char*)malloc(sizeof(char) * MAXSIZE);
-    gets(inputStr);
+    GUI_start();
+    scanf("%s", inputStr);
+    if(IsWrong(inputStr)) 
+    {
+        printf("The input is illegal!\n");
+        system("pause");
+        return 0;
+    } 
+    GUI_main();
     HandleInput(P, inputStr);
     PolyPoint head = &Poly;
     QuickSort(head, NULL, 0);
@@ -55,8 +79,36 @@ int main()
 }
 /*****main end*****/
 
+void GUI_start()
+{
+    printf("Welcome to use the polynomial calculator!\n");
+    printf("First you should input two strings to continue...\n");
+    printf("Input:\n");
+}
 
+void GUI_main()
+{
+    printf("\nuseage: [command]\n");
+    printf("        add     Add the two polynomials and show the result.\n");
+    printf("        sub     Sub the two polynomials and show the result.\n");
+    printf("        mul     Mul the two polynomials and show the result.\n");
+}
 
+bool IsWrong(char* str)
+{
+    int i;
+    for(i = 0; str[i] != '\0'; i++)
+    {
+        if(!(str[i] == 'x' || str[i] == 'X' || str[i] == '^' || str[i] == '+'
+            || str[i] == '-' || (str[i] >= '0' && str[i] <= '9')))
+            return true;
+        if(str[i+1] != '\0' && (str[i] == 'x' || str[i] == 'X') && (str[i+1] >= '0' && str[i+1] <= '9'))
+            return true;
+    }
+    if(str[i-1] == '-' || str[i-1] == '+' || str[i-1] == '^')
+        return true;
+    return false;
+}
 
 void HandleInput(PolyPoint P, char* inputStr)
 {
@@ -193,6 +245,56 @@ PolyPoint Delete(PolyPoint P)
         P->next = NULL;
     }
     return P;
+}
+
+PolyPoint AddPoly(PolyPoint A, PolyPoint B)
+{
+    PolyPoint C = (PolyPoint)malloc(sizeof(Polynomial)), Head;
+    Head = C;
+    C->next = NULL;
+    PolyPoint P, Q;
+    P = A, Q = B;
+    while(A && B)
+    {
+        if(P->e == Q->e)
+        {
+            C->c = P->c + Q->c;
+            C->e = P->e + Q->e;
+            C->next = (PolyPoint)malloc(sizeof(Polynomial));
+            C = C->next;
+            P = P->next, Q = Q->next;
+        }
+        else if(P->e > Q->e)
+        {
+            C->c = P->c;
+            C->e = P->e;
+            C->next = (PolyPoint)malloc(sizeof(Polynomial));
+            C = C->next;
+            P = P->next;
+        }
+        else
+        {
+            C->c = Q->c;
+            C->e = Q->e;
+            C->next = (PolyPoint)malloc(sizeof(Polynomial));
+            C = C->next;
+            Q = Q->next;
+        }
+    }
+    PolyPoint S;
+    if(!P && Q) S = Q;
+    if(P && !Q) S = P;
+    else S = NULL;
+    while(S)
+    {
+        C->c = S->c;
+        C->e = S->e;
+        C->next = (PolyPoint)malloc(sizeof(Polynomial));
+        C = C->next;
+        S = S->next;
+    }
+    free(C);
+    return Head;
 }
 
 void QuickSort(PolyPoint head, PolyPoint tail, int cmp)
