@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
 
 #define MAXSIZE 1000
 #define OK 1
@@ -7,21 +8,21 @@
 #define true 1
 #define false 0
 
+typedef double ElemType;
+typedef int bool;
 typedef struct Polynomial{
-    float c;  //多项式系数
-    float e;  //多项式指数
+    ElemType c;  //多项式系数
+    ElemType e;  //多项式指数
     struct Polynomial* next;
 }Polynomial;
-
 typedef Polynomial* PolyPoint;
-typedef int bool;
 
 int LENGTH = 0;  //运算后多项式的项的个数
+int ISEMPTY = 1; //数据是否为空
 
 //操作界面
 //程序设计的功能有输入、多项式相加、多项式相减、多项式相乘
-void GUI_start();
-void GUI_main();
+void GUI();
 //
 
 
@@ -30,15 +31,17 @@ void GUI_main();
 void DataSwitch(PolyPoint head, char* str);
 bool IsWrong(char* str);  //对输入的多项式进行检测，是否合法
 void HandleInput(PolyPoint P, char* intputStr);  //处理输入的字符串，将相关系数存入线性表中
-float StringToInt(char* str, int len);  //将输入的字符串转换为整数
+void StringToInt(PolyPoint P, char* str, int len);  //将输入的字符串转换为整数
 void CombineSame(PolyPoint P);  //将具有相同指数的项进行合并
 PolyPoint Delete(PolyPoint P);  //将系数为0的向删除
+void OutputResult(PolyPoint result);  //输出结果
 //
 
 //功能区
-//多项式加法、减法、乘法
-PolyPoint AddPoly(PolyPoint A, PolyPoint B);  //计算两个多项式加法并返回结果
-
+//多项式输入、加法、减法、乘法
+int InputPoly(PolyPoint A, PolyPoint B);   //输入数据
+PolyPoint AddPoly(PolyPoint A, PolyPoint B, int cmp);  //计算两个多项式加法或减法并返回结果，cmp为1是加法，为0减法
+//
 
 //快速排序链表
 //按指数进行升序排列，1为升序，0为降序
@@ -52,50 +55,90 @@ void swap(PolyPoint p, PolyPoint q);
 /*****main begin*****/
 int main()
 {
-    Polynomial Poly, Poly2;
-    PolyPoint P, Q;
-    P = &Poly, Q = &Poly2;
-
-    char* str1 = (char*)malloc(sizeof(char) * MAXSIZE);
-    char* str2 = (char*)malloc(sizeof(char) * MAXSIZE);
-    GUI_start();
-    scanf("%s", str1);
-    scanf("%s", str2);
-    if(IsWrong(str1) || IsWrong(str2)) 
+    char order[6] = {'\0'};
+    GUI();
+    while(scanf("%s", order) != EOF)
     {
-        printf("The input is illegal!\n");
-        system("pause");
-        return 0;
-    } 
-    GUI_main();
-    DataSwitch(P, str1);
-    DataSwitch(Q, str2);
-    PolyPoint result;
-    result = AddPoly(P, Q);
-    result = Delete(result);
-    while(result)
-    {
-        printf("%f %f\n", result->c, result->e);
-        result = result->next;
+        Polynomial Poly, Poly2;
+        PolyPoint P, Q;
+        P = &Poly, Q = &Poly2;
+        if(!strcmp(order, "input"))
+        {    
+            if(InputPoly(P, Q))
+                ISEMPTY = 0, printf("Finish.\n");
+            else ISEMPTY = 1;
+        }
+        else if(!strcmp(order, "add"))
+        {
+            if(ISEMPTY) printf("ERROR: No data.\n");
+            else
+            {
+                PolyPoint result;
+                result = AddPoly(P, Q, 1);
+                result = Delete(result);
+                printf("The result is:\n");
+                OutputResult(result);
+                printf("\n");
+            }
+        }
+        else if(!strcmp(order, "sub"))
+        {
+            if(ISEMPTY) printf("ERROR: No data.\n");
+            else
+            {
+                PolyPoint result;
+                result = AddPoly(P, Q, 0);
+                result = Delete(result);
+                printf("The result is:\n");
+                OutputResult(result);
+                printf("\n");
+            }
+        }
+        else if(!strcmp(order, "mul"))
+        {
+            if(ISEMPTY) printf("ERROR: No data.\n");
+            printf("emmm.\n");
+        }
+        else
+        printf("ERROR: Invalid instruction.\n");
+        printf("\n");
     }
-
     system("pause");
 }
 /*****main end*****/
 
-void GUI_start()
+
+void GUI()
 {
-    printf("Welcome to use the polynomial calculator!\n");
-    printf("First you should input two strings to continue...\n");
-    printf("Input:\n");
+    printf("***************************************************************\n");
+    printf("*                    Polynomial Calculator                    *\n");
+    printf("***************************************************************\n");
+    printf("\n\n");
+    printf("useage:  <command>\n");
+    printf("          input     Let you to inout tow polynomials.\n");
+    printf("          add	    Add the two polynomias.\n");
+    printf("          sub	    Sub the two polynomias.\n");
+    printf("          mul	    Mul the two polynomias.\n");
+    printf("\n\n");
+    printf("***************************************************************\n");
+    printf("*                                                             *\n");
+    printf("***************************************************************\n\n\n");
 }
 
-void GUI_main()
+int InputPoly(PolyPoint A, PolyPoint B)
 {
-    printf("\nuseage: [command]\n");
-    printf("        add     Add the two polynomials and show the result.\n");
-    printf("        sub     Sub the two polynomials and show the result.\n");
-    printf("        mul     Mul the two polynomials and show the result.\n");
+    char* str1 = (char*)malloc(sizeof(char) * MAXSIZE);
+    char* str2 = (char*)malloc(sizeof(char) * MAXSIZE);
+    scanf("%s", str1), scanf("%s", str2);
+    if(IsWrong(str1) || IsWrong(str2)) 
+    {
+        printf("ERROR: Illegal input.\n");
+        return ERROR;
+    } 
+    DataSwitch(A, str1);
+    DataSwitch(B, str2);
+    free(str1), free(str2);
+    return OK;
 }
 
 bool IsWrong(char* str)
@@ -127,89 +170,56 @@ void DataSwitch(PolyPoint head, char* str)
 void HandleInput(PolyPoint P, char* inputStr)
 {
     int begin, end;
-    for(begin = 0, end = 0; ; )
+    for(begin = 0, end = 1; ; )
     {
-        //对x前的系数进行处理
-        while(inputStr[end] != 'x' && inputStr[end] != 'X' && inputStr[end] != '\0' &&
-        inputStr[end] != '+' && inputStr[end] != '-') 
+        while(inputStr[end] != '\0')
+        {   
+            if(inputStr[end] == '+' || inputStr[end] == '-') 
+                if(inputStr[end-1] != '^') break;
             end++;
-        if(end == 0 &&(inputStr[end+1] == 'x' || inputStr[end+1] == 'X')) end++;
-        P->c = StringToInt(inputStr + begin, end - begin);
-
-        //常数项处理
-        if(inputStr[end] == '+' || inputStr[end] == '-')
-        {
-            P->e = 0;
-            P->next = (PolyPoint)malloc(sizeof(Polynomial)); 
-            P = P->next;
-            begin = end, end++;
-            continue;
         }
-
-        //对x后的指数进行处理
+        StringToInt(P, inputStr + begin, end - begin);
         begin = end;
-        //尾部处理
-        if(inputStr[end] == '\0')
-        {
-            P -> e = 0;
-            break;
-        }
-
-        end++, begin++;
-        if(inputStr[begin] == '^') begin++, end = begin + 1;
-        while(inputStr[end] != '+' && inputStr[end] != '-' && inputStr[end] != '\0') end++;
-        P->e = StringToInt(inputStr + begin, end - begin);
-        
-        begin = end;
-        if(inputStr[end] == '\0')
-            break;
-        end++;
-        P->next = (PolyPoint)malloc(sizeof(Polynomial)); 
+        if(inputStr[begin] == '\0') break;
+        P->next = (PolyPoint)malloc(sizeof(Polynomial));
         P = P->next;
+        end++;
     }
     P->next = NULL;
 }
 
-float StringToInt(char* str, int len)
+void StringToInt(PolyPoint P,  char* str, int len)
 {
-    int i;
-    float num = 1, a = 10, b = 1;
-    int isSymbol = 0;  //判断是否为负数
-
-    switch(len)
-    {
-    //str = x 或 str = 0 对应的情况
-    case 0:
-        if(str[0] == 'x' || str[0] == 'X' || str[0] == '+' || str[0] == '-' || str[0] == '\0') 
-            return 1;
-        else return 0;
-        break;
-
-    //str = -x 或 str = 2x 的情况
-    case 1:
-        if(str[0] == '-') return -1;
-        else if(str[0] == '+') return 1;
-        else return (str[0] - '0');
-        break;
+    int cur = 0;
+    while(str[cur] != 'x' && str[cur] != 'X' && cur < len) cur++;
     
-    //剩余情况
-    default:
-        if(str[0] == '-' || str[0] == '+') isSymbol = 1;
-        for(i = isSymbol ? 1 : 0; i < len; i++)
-        {
-            if(b < 1) b = b * 0.1;
-            if(str[i] == '.')
-            {
-                a = 1;
-                b = 0.1;
-                i++;
-            }
-            num *= a;
-            num += (str[i] - '0') * b;
-        }
-        return str[0] == '-' ? 0 - num : num;
-        break;
+    if(cur == len)  //此时为常数项
+    {
+        P->c = atof(str);
+        P->e = 0;
     }
+
+    else
+    {
+        if(cur == 0) P->c = 1;
+        else if(cur == 1) 
+        {
+            if(str[cur-1] == '+') P->c = 1;
+            else if(str[cur-1] == '-') P->c = -1;
+            else P->c = atof(str);
+        } 
+        else P->c = atof(str);
+
+        if(cur+1 == len)
+            P->e = 1;
+        else
+        {
+            cur = cur + 2;
+            if(cur + 1 == len && str[cur] == '-') P->e = -1;
+            else P->e = atof(str + cur);
+        }
+    }
+       
 }
 
 void CombineSame(PolyPoint P)
@@ -270,7 +280,48 @@ PolyPoint Delete(PolyPoint P)
     return P;
 }
 
-PolyPoint AddPoly(PolyPoint A, PolyPoint B)
+void OutputResult(PolyPoint result)
+{
+    PolyPoint P = result;
+    while(P)
+    {
+        if(P->c != 1)
+        {
+            if(P->c == -1)
+            {
+                if(P->e == 0)
+                    printf("-1");
+                else
+                    printf("-");
+            }
+            else
+                printf("%g", P->c);
+        }
+
+        else
+        {
+            if(P->e == 0)
+                printf("1");
+        }
+
+        if(P->e != 0)
+        {
+            printf("x");
+            if(P->e != 1)
+            {
+                printf("^");
+                printf("%g", P->e);
+            }
+        }
+
+
+        if(P->next && P->next->c > 0)
+            printf("+");
+        P = P->next;
+    }
+}
+
+PolyPoint AddPoly(PolyPoint A, PolyPoint B, int cmp)
 {
     PolyPoint C = (PolyPoint)malloc(sizeof(Polynomial)), Head;
     Head = C;
@@ -281,7 +332,7 @@ PolyPoint AddPoly(PolyPoint A, PolyPoint B)
     {
         if(P->e == Q->e)
         {
-            C->c = P->c + Q->c;
+            C->c = cmp ? P->c + Q->c : P->c - Q->c;
             C->e = P->e;
             P = P->next, Q = Q->next;
         }
@@ -293,7 +344,7 @@ PolyPoint AddPoly(PolyPoint A, PolyPoint B)
         }
         else
         {
-            C->c = Q->c;
+            C->c = cmp ? Q->c : 0 - Q->c;
             C->e = Q->e;
             Q = Q->next;
         }
@@ -307,10 +358,10 @@ PolyPoint AddPoly(PolyPoint A, PolyPoint B)
     }
     PolyPoint S;
     if(!P && Q) S = Q;
-    else  S = P;
+    else  S = P, cmp = 1;
     while(S)
     {
-        C->c = S->c;
+        C->c = cmp ? S->c : 0 - S->c;
         C->e = S->e;
         if(!S->next) C->next = NULL;
         else
@@ -337,7 +388,7 @@ PolyPoint partition(PolyPoint head, PolyPoint tail, int cmp)
 {
     PolyPoint p = head;
     PolyPoint q = p->next;
-    int pivot = p->e;
+    ElemType pivot = p->e;
 
     while(q != tail)
     {
@@ -356,7 +407,7 @@ PolyPoint partition(PolyPoint head, PolyPoint tail, int cmp)
 
 void swap(PolyPoint p, PolyPoint q)
 {
-    int pivotC, pivotE;
+    ElemType pivotC, pivotE;
     pivotC = p->c, pivotE = p->e;
     p->c = q->c, p->e = q->e;
     q->c = pivotC, q->e = pivotE;
