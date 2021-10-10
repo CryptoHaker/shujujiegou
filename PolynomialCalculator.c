@@ -17,17 +17,12 @@ typedef struct Polynomial{
 }Polynomial;
 typedef Polynomial* PolyPoint;
 
-int LENGTH = 0;  //运算后多项式的项的个数
 int ISEMPTY = 1; //数据是否为空
 
 //操作界面
-//程序设计的功能有输入、多项式相加、多项式相减、多项式相乘
 void GUI();
-//
-
 
 //处理数据
-//输入合法性检测、输入的数据转化成链表存储方式、数据中特殊例处理
 void DataSwitch(PolyPoint head, char* str);
 bool IsWrong(char* str);  //对输入的多项式进行检测，是否合法
 void HandleInput(PolyPoint P, char* intputStr);  //处理输入的字符串，将相关系数存入线性表中
@@ -35,22 +30,16 @@ void StringToInt(PolyPoint P, char* str, int len);  //将输入的字符串转�
 void CombineSame(PolyPoint P);  //将具有相同指数的项进行合并
 PolyPoint Delete(PolyPoint P);  //将系数为0的向删除
 void OutputResult(PolyPoint result);  //输出结果
-//
 
 //功能区
-//多项式输入、加法、减法、乘法
 int InputPoly(PolyPoint A, PolyPoint B);   //输入数据
 PolyPoint AddPoly(PolyPoint A, PolyPoint B, int cmp);  //计算两个多项式加法或减法并返回结果，cmp为1是加法，为0减法
-//
+PolyPoint MulPoly(PolyPoint A, PolyPoint B);  //计算两个多项式的乘法并返回结果
 
 //快速排序链表
-//按指数进行升序排列，1为升序，0为降序
 void QuickSort(PolyPoint head, PolyPoint tail, int cmp);  
 PolyPoint partition(PolyPoint head, PolyPoint tail, int cmp);
 void swap(PolyPoint p, PolyPoint q);
-//
-
-
 
 /*****main begin*****/
 int main()
@@ -97,7 +86,14 @@ int main()
         else if(!strcmp(order, "mul"))
         {
             if(ISEMPTY) printf("ERROR: No data.\n");
-            printf("emmm.\n");
+            else
+            {
+                PolyPoint result;
+                result = MulPoly(P, Q);
+                printf("The result is:\n");
+                OutputResult(result);
+                printf("\n");
+            }
         }
         else
         printf("ERROR: Invalid instruction.\n");
@@ -106,7 +102,6 @@ int main()
     system("pause");
 }
 /*****main end*****/
-
 
 void GUI()
 {
@@ -135,8 +130,7 @@ int InputPoly(PolyPoint A, PolyPoint B)
         printf("ERROR: Illegal input.\n");
         return ERROR;
     } 
-    DataSwitch(A, str1);
-    DataSwitch(B, str2);
+    DataSwitch(A, str1), DataSwitch(B, str2);
     free(str1), free(str2);
     return OK;
 }
@@ -192,13 +186,11 @@ void StringToInt(PolyPoint P,  char* str, int len)
 {
     int cur = 0;
     while(str[cur] != 'x' && str[cur] != 'X' && cur < len) cur++;
-    
     if(cur == len)  //此时为常数项
     {
         P->c = atof(str);
         P->e = 0;
     }
-
     else
     {
         if(cur == 0) P->c = 1;
@@ -209,7 +201,6 @@ void StringToInt(PolyPoint P,  char* str, int len)
             else P->c = atof(str);
         } 
         else P->c = atof(str);
-
         if(cur+1 == len)
             P->e = 1;
         else
@@ -219,7 +210,6 @@ void StringToInt(PolyPoint P,  char* str, int len)
             else P->e = atof(str + cur);
         }
     }
-       
 }
 
 void CombineSame(PolyPoint P)
@@ -250,7 +240,6 @@ PolyPoint Delete(PolyPoint P)
         P = P->next;
         Q = P;
     }
-
     S = Q;
     if(Q)
         Q = Q->next;
@@ -268,7 +257,6 @@ PolyPoint Delete(PolyPoint P)
             Q = S->next;
         }
     }
-    
     //链表值为0时返回的情况
     if(P == NULL)
     {
@@ -280,7 +268,7 @@ PolyPoint Delete(PolyPoint P)
     return P;
 }
 
-void OutputResult(PolyPoint result)
+void OutputResult(PolyPoint result) 
 {
     PolyPoint P = result;
     while(P)
@@ -289,21 +277,13 @@ void OutputResult(PolyPoint result)
         {
             if(P->c == -1)
             {
-                if(P->e == 0)
-                    printf("-1");
-                else
-                    printf("-");
+                if(P->e == 0) printf("-1");
+                else printf("-");
             }
-            else
-                printf("%g", P->c);
+            else printf("%g", P->c);
         }
-
         else
-        {
-            if(P->e == 0)
-                printf("1");
-        }
-
+            if(P->e == 0) printf("1");
         if(P->e != 0)
         {
             printf("x");
@@ -313,30 +293,26 @@ void OutputResult(PolyPoint result)
                 printf("%g", P->e);
             }
         }
-
-
-        if(P->next && P->next->c > 0)
-            printf("+");
+        if(P->next && P->next->c > 0) printf("+");
         P = P->next;
     }
 }
 
 PolyPoint AddPoly(PolyPoint A, PolyPoint B, int cmp)
 {
-    PolyPoint C = (PolyPoint)malloc(sizeof(Polynomial)), Head;
-    Head = C;
+    PolyPoint C = (PolyPoint)malloc(sizeof(Polynomial)), Head = C;
     C->next = NULL;
-    PolyPoint P, Q;
+    PolyPoint P, Q, S;
     P = A, Q = B;
-    while(P && Q)
+    while(P && Q)  
     {
-        if(P->e == Q->e)
+        if(P->e == Q->e)  //指数相等便直接相加/相减系数
         {
             C->c = cmp ? P->c + Q->c : P->c - Q->c;
             C->e = P->e;
             P = P->next, Q = Q->next;
         }
-        else if(P->e > Q->e)
+        else if(P->e > Q->e)  //哪一个指数大排在前面
         {
             C->c = P->c;
             C->e = P->e;
@@ -356,10 +332,9 @@ PolyPoint AddPoly(PolyPoint A, PolyPoint B, int cmp)
         C->next = (PolyPoint)malloc(sizeof(Polynomial));
         C = C->next;
     }
-    PolyPoint S;
     if(!P && Q) S = Q;
     else  S = P, cmp = 1;
-    while(S)
+    while(S)  //处理较长的多项式
     {
         C->c = cmp ? S->c : 0 - S->c;
         C->e = S->e;
@@ -372,6 +347,29 @@ PolyPoint AddPoly(PolyPoint A, PolyPoint B, int cmp)
         S = S->next;
     }
     return Head;
+}
+
+PolyPoint MulPoly(PolyPoint A, PolyPoint B)
+{
+    PolyPoint P, Q, R, newHead;
+    Q = B, R = (PolyPoint)malloc(sizeof(Polynomial));
+    newHead = R;
+    while(Q)
+    {
+        P = A;
+        while(P)
+        {
+            R->c = Q->c * P->c, R->e = Q->e + P->e;
+            if(P->next == NULL && Q->next == NULL) R->next = NULL;
+            else R->next = (PolyPoint)malloc(sizeof(Polynomial));
+            R = R->next;
+            P = P->next;
+        }
+        Q = Q->next;
+    }
+    QuickSort(newHead, NULL, 0);
+    CombineSame(newHead);
+    return Delete(newHead);
 }
 
 void QuickSort(PolyPoint head, PolyPoint tail, int cmp)
@@ -389,7 +387,6 @@ PolyPoint partition(PolyPoint head, PolyPoint tail, int cmp)
     PolyPoint p = head;
     PolyPoint q = p->next;
     ElemType pivot = p->e;
-
     while(q != tail)
     {
         if(cmp ? q->e < pivot : q->e > pivot)
@@ -399,9 +396,7 @@ PolyPoint partition(PolyPoint head, PolyPoint tail, int cmp)
         }
         q = q->next;
     }
-
     swap(p, head);
-    
     return p;
 }
 
